@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: recipe-finder-backend-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+      - /app/node_modules
+    environment:
+      - PORT=3001
+      - NODE_ENV=development
+      - SPOONACULAR_API_KEY=${SPOONACULAR_API_KEY}
+      - SPOONACULAR_BASE_URL=https://api.spoonacular.com
+      - CORS_ORIGIN=http://localhost:3000
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+    networks:
+      - recipe-finder-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: recipe-finder-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/package.json:/app/package.json
+      - /app/node_modules
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=/api
+    networks:
+      - recipe-finder-network
+
+networks:
+  recipe-finder-network:
+    driver: bridge
