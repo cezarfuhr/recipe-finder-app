@@ -12,12 +12,30 @@ Encontre receitas deliciosas e saudáveis facilmente com filtros nutricionais e 
 - 🎯 **Filtros de dieta** - Vegetariano, vegano, sem glúten, keto e muito mais
 - ⏱️ **Tempo de preparo** - Filtre receitas por tempo disponível
 
+## 🚀 Production-Ready Features
+
+- 🔐 **Autenticação JWT** - Sistema completo de login e registro
+- 🗄️ **PostgreSQL** - Persistência de dados com TypeORM
+- ⚡ **Redis Cache** - Cache inteligente para economizar chamadas de API
+- 📊 **Logging Winston** - Logs estruturados com rotação diária
+- 🛡️ **Segurança** - Helmet, rate limiting, validação de dados
+- 🏥 **Health Checks** - Monitoramento de banco, cache e API
+- 🐳 **Docker Production** - Builds otimizados multi-stage
+- 🔄 **CI/CD** - GitHub Actions para testes automatizados
+- 📚 **API Docs** - Swagger/OpenAPI completo
+- 🔧 **Configurável** - Variáveis de ambiente gerenciáveis
+
 ## Tecnologias
 
 ### Backend
 - Node.js + Express
 - TypeScript
+- **PostgreSQL** + TypeORM
+- **Redis** (cache)
+- **JWT** Authentication
 - Spoonacular API
+- **Winston** (logging)
+- **Joi** (validation)
 - Jest + Supertest (testes)
 - Swagger/OpenAPI (documentação)
 - Docker
@@ -36,15 +54,25 @@ Encontre receitas deliciosas e saudáveis facilmente com filtros nutricionais e 
 
 O projeto utiliza uma arquitetura de microserviços com:
 
-- **Backend**: API RESTful que se comunica com a Spoonacular API
-- **Frontend**: SPA React que consome a API do backend
-- **Docker Compose**: Orquestração dos serviços
+- **Backend**: API RESTful com autenticação JWT
+- **Frontend**: SPA React
+- **PostgreSQL**: Banco de dados relacional
+- **Redis**: Cache para otimização
+- **Docker Compose**: Orquestração completa
 
 ```
 ┌─────────────┐      ┌─────────────┐      ┌──────────────┐
 │   Frontend  │ ───> │   Backend   │ ───> │ Spoonacular  │
 │   (React)   │      │  (Express)  │      │     API      │
-└─────────────┘      └─────────────┘      └──────────────┘
+│   Nginx     │      │   + JWT     │      └──────────────┘
+└─────────────┘      └──────┬──────┘
+                            │
+                     ┌──────┴──────┐
+                     ▼             ▼
+              ┌──────────┐  ┌──────────┐
+              │PostgreSQL│  │  Redis   │
+              │   (DB)   │  │ (Cache)  │
+              └──────────┘  └──────────┘
 ```
 
 ## Pré-requisitos
@@ -61,14 +89,37 @@ git clone <repository-url>
 cd recipe-finder-app
 ```
 
-### 2. Configure a API Key
+### 2. Configure as Variáveis de Ambiente
 
 ```bash
 # Copie o arquivo de exemplo
 cp .env.example .env
 
-# Edite o arquivo .env e adicione sua API key da Spoonacular
+# Edite o .env com suas configurações
+nano .env
+```
+
+**IMPORTANTE**: Configure os seguintes valores:
+
+```bash
+# Database
+DB_PASSWORD=escolha_uma_senha_forte
+
+# JWT (OBRIGATÓRIO para produção!)
+JWT_SECRET=gere_um_secret_aleatorio_32_chars
+JWT_REFRESH_SECRET=gere_outro_secret_aleatorio_32_chars
+
+# Spoonacular
 SPOONACULAR_API_KEY=sua_api_key_aqui
+```
+
+**Gerar secrets seguros**:
+```bash
+# Linux/Mac
+openssl rand -hex 32
+
+# Ou com Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### 3. Execute com Docker Compose
@@ -105,6 +156,27 @@ docker-compose -f docker-compose.dev.yml down
 - **Backend API**: http://localhost:3001
 - **API Docs (Swagger)**: http://localhost:3001/api-docs
 - **Health Check**: http://localhost:3001/health
+
+### 5. Crie sua primeira conta
+
+```bash
+# Registrar usuário
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "seu@email.com",
+    "password": "senha123",
+    "name": "Seu Nome"
+  }'
+
+# Fazer login
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "seu@email.com",
+    "password": "senha123"
+  }'
+```
 
 ## Desenvolvimento Local (sem Docker)
 
@@ -251,6 +323,36 @@ npm run test:watch
 
 # Gerar relatório de cobertura
 npm test -- --coverage
+```
+
+## 🚀 Deploy para Produção
+
+Para deploy em produção, consulte o **[Guia de Deploy Completo](DEPLOY.md)** que inclui:
+
+- Configuração de variáveis de ambiente seguras
+- Deploy em AWS, GCP, Digital Ocean, Heroku
+- Monitoramento e logs
+- Backup e recuperação
+- Troubleshooting
+- Otimizações de performance
+- Checklist de segurança
+
+**Quick Start para Produção**:
+
+```bash
+# 1. Gerar secrets
+openssl rand -hex 32  # JWT_SECRET
+openssl rand -hex 32  # JWT_REFRESH_SECRET
+
+# 2. Configurar .env
+cp .env.example .env
+# Editar com secrets e senhas fortes
+
+# 3. Deploy
+docker-compose up -d
+
+# 4. Verificar saúde
+curl http://seu-servidor:3001/health
 ```
 
 ## API Externa Gerenciável
